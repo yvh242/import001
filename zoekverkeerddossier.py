@@ -61,4 +61,15 @@ if uploaded_file is not None:
                     st.dataframe(result_df)
                 
                 # Download optie (CSV)
-                csv
+                csv = result_df.to_csv(index=False, sep=';').encode('utf-8')
+                st.download_button(
+                    label="📥 Download resultaat (CSV)",
+                    data=csv,
+                    file_name='dubbele_dossiers.csv',
+                    mime='text/csv'
+                )
+    
+    except Exception as e:
+        st.error(f"❌ Fout: {str(e)}")
+else:
+    st.info("📤 Upload een Excel-bestand om te beginnen")

@@ -18,19 +18,19 @@ if uploaded_file1 is not None and uploaded_file2 is not None:
         df2 = pd.read_excel(uploaded_file2)
 
         # Controleer of de benodigde kolommen bestaan
-        required_columns = ['Ritdatum', 'Ritnr']
+        required_columns = ['Ritdatum', 'Ritnr.']
         if not all(col in df1.columns for col in required_columns):
-            st.error("❌ Bestand 1 moet 'Ritdatum' en 'Ritnr' bevatten!")
+            st.error("❌ Bestand 1 moet 'Ritdatum' en 'Ritnr.' bevatten!")
         elif not all(col in df2.columns for col in required_columns):
-            st.error("❌ Bestand 2 moet 'Ritdatum' en 'Ritnr' bevatten!")
+            st.error("❌ Bestand 2 moet 'Ritdatum' en 'Ritnr.' bevatten!")
         else:
             # Zet 'Ritdatum' om naar datum (voor consistente vergelijking)
             df1['Ritdatum'] = pd.to_datetime(df1['Ritdatum']).dt.date
             df2['Ritdatum'] = pd.to_datetime(df2['Ritdatum']).dt.date
 
             # Maak een sleutelkolom voor matching
-            df1['Match_key'] = df1['Ritdatum'].astype(str) + "_" + df1['Ritnr'].astype(str)
-            df2['Match_key'] = df2['Ritdatum'].astype(str) + "_" + df2['Ritnr'].astype(str)
+            df1['Match_key'] = df1['Ritdatum'].astype(str) + "_" + df1['Ritnr.'].astype(str)
+            df2['Match_key'] = df2['Ritdatum'].astype(str) + "_" + df2['Ritnr.'].astype(str)
 
             # Voeg een kolom toe aan df1 die aangeeft of de rit in df2 voorkomt
             df1['Bestand 2 Match'] = df1['Match_key'].isin(df2['Match_key']).map({True: '✅ GEVONDEN', False: '❌ NO DATA'})

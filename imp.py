@@ -1,33 +1,44 @@
 import streamlit as st
 import pandas as pd
 
-def main():
-    st.title("Excel-bestanden viewer")
-    st.write("Upload een Excel-bestand om de inhoud te bekijken")
+st.title('🚗 Rittenanalyse per Chauffeur')
 
-    # Bestand uploader
-    uploaded_file = st.file_uploader("Kies een Excel-bestand", type=['xlsx', 'xls'])
+# Bestand uploaden
+uploaded_file = st.file_uploader("Upload Excel-bestand", type=['xlsx', 'xls'])
 
-    if uploaded_file is not None:
-        try:
-            # Lees het Excel-bestand
-            df = pd.read_excel(uploaded_file)
+if uploaded_file is not None:
+    try:
+        # Excel lezen
+        df = pd.read_excel(uploaded_file)
+        
+        # Controleren of de benodigde kolommen aanwezig zijn
+        required_columns = ['Chauffeur naam', 'Ritdatum']
+        if all(col in df.columns for col in required_columns):
+            # Datum kolom omzetten naar datumtype
+            df['Ritdatum'] = pd.to_datetime(df['Ritdatum']).dt.date
             
-            # Toon de data
-            st.success("Bestand succesvol geüpload!")
-            st.write("Voorbeeld van de data:")
-            st.dataframe(df)
+            # Aantal ritten per chauffeur per datum tellen
+            result = df.groupby(['Chauffeur naam', 'Ritdatum']).size().reset_index(name='Aantal ritten')
             
-            # Optionele extra's
-            st.subheader("Data informatie")
-            st.write(f"Aantal rijen: {df.shape[0]}")
-            st.write(f"Aantal kolommen: {df.shape[1]}")
+            # Sorteren op datum en chauffeur
+            result = result.sort_values(by=['Ritdatum', 'Chauffeur naam'])
             
-            st.subheader("Kolommen")
-            st.write(list(df.columns))
+            # Resultaat tonen
+            st.success("✅ Bestand succesvol verwerkt!")
+            st.dataframe(result)
             
-        except Exception as e:
-            st.error(f"Fout bij het lezen van het bestand: {e}")
-
-if __name__ == "__main__":
-    main()
+            # Download knop voor resultaat (CSV)
+            csv = result.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Download resultaat als CSV",
+                data=csv,
+                file_name='ritten_per_chauffeur.csv',
+                mime='text/csv'
+            )
+        else:
+            st.error("❌ Het Excel-bestand moet 'Chauffeur naam' en 'Ritdatum' kolommen bevatten.")
+    
+    except Exception as e:
+        st.error(f"❌ Fout: {e}")
+else:
+    st.info("📤 Upload een Excel-bestand om te beginnen")

@@ -36,7 +36,7 @@ if uploaded_file1 is not None and uploaded_file2 is not None:
             df1['Status'] = df1['Match_key'].isin(df2['Match_key']).map({True: '✅ OK', False: '❌ NIET OK'})
 
             # Selecteer alleen de gewenste kolommen voor output
-            output_columns = ['Ritdatum', 'Ritnr', 'Chauffeur naam', 'Status']
+            output_columns = ['Ritdatum', 'Ritnr.', 'Chauffeur naam', 'Status']
             result_df = df1[output_columns]
 
             # Toon het resultaat

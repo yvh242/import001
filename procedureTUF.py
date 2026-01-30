@@ -1,3 +1,10 @@
+try:
+    import cgi
+except ImportError:
+    import legacy_cgi as cgi
+    import sys
+    sys.modules['cgi'] = cgi
+
 import streamlit as st
 from googletrans import Translator
 from PIL import Image

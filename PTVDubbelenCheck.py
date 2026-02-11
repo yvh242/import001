@@ -10,14 +10,12 @@ uploaded_file = st.file_uploader("Upload je Excel bestand", type=['xlsx'])
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    
-    # Kolomnamen opschonen (spaties verwijderen)
     df.columns = df.columns.str.strip()
     
     required_columns = ['Verzending-ID', 'Type', 'Kg', 'LM']
     if all(col in df.columns for col in required_columns):
         
-        # Groeperen en optellen
+        # Stap 1: Groeperen en optellen
         df_grouped = df.groupby(['Verzending-ID', 'Type'], as_index=False).agg({
             'Kg': 'sum',
             'LM': 'sum'
@@ -26,30 +24,34 @@ if uploaded_file:
         if st.button("Voer Analyse Uit"):
             st.divider()
             
-            # --- GEAALISEERDE ANALYSE 1 ---
-            st.subheader("1. Afwijkingen tussen berekende en werkelijke LM")
+            # --- GEAALISEERDE ANALYSE 1: Theoretisch HOGER dan LM ---
+            st.subheader("1. Zware zendingen (Gewicht > LM + 10%)")
             
-            # We berekenen de theoretische LM op basis van gewicht
+            # Bereken de theoretische LM op basis van 1800kg per meter
             df_grouped['Theoretische_LM'] = df_grouped['Kg'] / 1800
             
-            # We berekenen het procentuele verschil ten opzichte van de ingegeven LM
-            # Formule: |(Theoretisch - Werkelijk) / Werkelijk|
-            df_grouped['Afwijking_Percentage'] = (
-                (df_grouped['Theoretische_LM'] - df_grouped['LM']).abs() / df_grouped['LM']
-            )
-
-            # Filter: Toon alles waar de afwijking groter is dan 10% (0.10)
-            resultaat_1 = df_grouped[df_grouped['Afwijking_Percentage'] > 0.10].copy()
+            # FILTER: Toon alleen als de Theoretische_LM meer dan 10% HOGER is dan de LM
+            # Dus: Theoretische_LM > (LM * 1.10)
+            mask_te_zwaar = df_grouped['Theoretische_LM'] > (df_grouped['LM'] * 1.10)
             
-            # Netjes formatteren voor weergave
-            resultaat_1['Afwijking_Percentage'] = (resultaat_1['Afwijking_Percentage'] * 100).round(2).astype(str) + '%'
+            resultaat_1 = df_grouped[mask_te_zwaar].copy()
             
             if not resultaat_1.empty:
-                st.write(f"Er zijn {len(resultaat_1)} zendingen gevonden met meer dan 10% afwijking:")
-                st.dataframe(resultaat_1[['Verzending-ID', 'Type', 'Kg', 'LM', 'Theoretische_LM', 'Afwijking_Percentage']])
+                st.error(f"Gevonden: {len(resultaat_1)} zendingen die zwaarder zijn dan de gereserveerde laadmeters.")
+                st.dataframe(resultaat_1[['Verzending-ID', 'Type', 'Kg', 'LM', 'Theoretische_LM']])
             else:
-                st.success("Geen zendingen gevonden met een afwijking groter dan 10%.")
+                st.success("Geen zendingen gevonden die te zwaar zijn voor de opgegeven LM.")
 
+            # --- ANALYSE 2: Dubbele Types ---
+            st.subheader("2. Zendingen met 2 verschillende Types")
+            counts = df_grouped['Verzending-ID'].value_counts()
+            dubbele_ids = counts[counts >= 2].index
+            resultaat_2 = df_grouped[df_grouped['Verzending-ID'].isin(dubbele_ids)]
+            
+            if not resultaat_2.empty:
+                st.dataframe(resultaat_2.sort_values(by='Verzending-ID'))
+
+            
             # --- ANALYSE 2: Dubbele Types per ID ---
             st.subheader("2. Zendingen met meerdere Types")
             st.info("Zendingen waar hetzelfde 'Verzending-ID' voorkomt bij 2 verschillende 'Types'.")
